@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const signup = async (req, res) => {
   try {
-    const { name, email, username, passowrd } = req.body;
+    const { mobile, email, username, password } = req.body;
     const userList = await UserModel.findOne({
       $or: [{ email }, { username }],
     });
@@ -21,11 +21,10 @@ const signup = async (req, res) => {
     const pass = bcrypt.hashSync(req.body.password, salt);
 
     const user = {
-      username: req.body.username,
-      mobile: req.body.mobile,
-      email: req.body.email,
+      username: username,
+      mobile: mobile,
+      email: email,
       password: pass,
-      address: req.body.address,
     };
 
     // cookie setup is pending

@@ -2,7 +2,7 @@
 
 const postComment = async (req, res)=>{
     try{
-
+        
     }
     catch(error){
         res.json({
