@@ -6,17 +6,23 @@ import { Link } from 'react-router-dom'
 function Signin() {
 
   const navigate = useNavigate()
-  const [isDarkMode, setDarkMode] = useContext(myContext);
+  const [isDarkMode, setDarkMode, currentUser, setCurrentUser] = useContext(myContext);
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleSignIn = async ()=>{
+  const storeCurrentUserInLocalStorage = (currentUser)=>{
+    localStorage.setItem("currentUser", JSON.stringify(currentUser) )
+  }
+  
+  const handleSignIn = async (e)=>{
+    e.preventDefault();
     try{
       const response = await fetch("http://localhost:1000/api/users/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           email,
           password
@@ -25,14 +31,27 @@ function Signin() {
       console.log(response)
       const data = await response.json();
       console.log(data);
+      
+      setCurrentUser(data?.user)
+
+      storeCurrentUserInLocalStorage(data?.user)
+
+      
       if(data.success){
-        navigate("/home")
+        console.log("Success");
       }
+      
+      navigate("/home")
+
+      setEmail("")
+      setPassword("")
     }
     catch(error){
       console.log(error);
     }
   }
+
+  
   
   return (
     <div style={{ height: "calc(100vh - 65px)" }}
@@ -117,7 +136,7 @@ function Signin() {
             <div>
               <button
                 className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold py-2 px-4 rounded-md mt-4 hover:bg-indigo-600 hover:to-blue-600 transition ease-in-out duration-150 w-full"
-                onClick={handleSignIn}
+                onClick={(e)=>{handleSignIn(e)}}
               >
                 Sign In
               </button>

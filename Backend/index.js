@@ -7,11 +7,30 @@ const userRoutes = require('./Routes/user')
 const postRoutes = require('./Routes/post')
 const cors = require('cors')
 
-app.use(cors())
 
 // const threadRoutes = require('./Routes/thread')
 const authMiddleware = require('./Middleware/authMiddleware')
 const cookieParser = require('cookie-parser')
+
+const allowedOrigins = [
+    'http://localhost:5173', //frontend ka dalna hai
+//   process.env.CORS_ORIGIN
+];
+
+// CORS options
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+        callback(new Error('Not allowed by CORS'));
+    }
+},
+credentials: true
+};
+
+app.use(cors(corsOptions))
+app.options("*", cors(corsOptions));
 
 
 

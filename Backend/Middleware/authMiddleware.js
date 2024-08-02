@@ -1,57 +1,55 @@
 const jwt = require('jsonwebtoken');
 const UserSchema = require('../Model/user');
 
-const authMiddleware = async (req, res, next)=>{
-    try{
-        const bearertoken = req.header.authorization;
-        if(!bearertoken){
-            return req.json({
-                status : false,
-                message : "Incorrect token"
-            })
+const authMiddleware = async (req, res, next) => {
+    try {
+        // const bearertoken = req.headers['authorization'];
+        
+        // if (!bearertoken) {
+        //     return res.status(401).json({
+        //         status: false,
+        //         message: "Token is required"
+        //     });
+        // }
+        
+        if(!req.cookies.token){
+            return res.status(401).json({message : "unauthorised"})
         }
+        // console.log("token from Cookie after", req.cookies.token)
 
-        const token = bearertoken.split("")[1]; 
-        jwt.verify(token, process.env.JWT_SCRETE_KEY) //verify Token
+        const token = req.cookies.token  // || bearertoken.split(" ")[1];
 
-        const tokenData = jwt.decode(token)
-        console.log.log("Token Data", tokenData)
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY); // verify Token
+
+        console.log("Token Data- authMiddleware", decodedToken);
 
         const currentTimeInSeconds = Math.floor(new Date().getTime() / 1000);
 
-        if(currentTimeInSeconds > tokenData.expiry){
+        if (currentTimeInSeconds > decodedToken.expiry) {
             return res.status(401).json({
-                status : false,
-                message: "unauthorized!"
-            })
+                status: false,
+                message: "Unauthorized! Token expired"
+            });
         }
 
-        const user = await UserSchema.findById(tokenData.userid)
-        if(!user){
+        const user = await UserSchema.findById(decodedToken.userid);
+        if (!user) {
             return res.status(401).json({
-                status : false,
-                message: "unauthorized!"
-            })
+                status: false,
+                message: "Unauthorized! User not found"
+            });
         }
-        
-        console.log(req.user, "Request user data")
-        console.log(user, "MongoDB user data")
 
         req.user = user;
-        
         next();
-    }
-    catch(error){
-        res.json({
+    } catch (error) {
+        console.log("Error in authMiddleware:", error);
+        res.status(500).json({
             status: false,
-            message: "Something Went Wrong. Please try again!",
+            message: "Something went wrong. Please try again!",
             errorMessage: error,
-          })
+        });
     }
-}
+};
 
-module.exports = authMiddleware
-
-
-
-
+module.exports = authMiddleware;

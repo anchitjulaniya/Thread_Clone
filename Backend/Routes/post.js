@@ -6,6 +6,10 @@ const routes = express.Router()
 
 routes.get('/feed',   postController.getFeedPosts)
 routes.post('/create',   postController.createPost ) 
+// routes.post('/create',   (req,res)=>{
+//     return res.json("hi")
+// } ) 
+
 routes.get('/:postId',   postController.updatePost) // get single post by id
 routes.delete('/:postId',   postController.deletePost) // delete post
 routes.post('/like/:postId',   postController.likePost) // like post

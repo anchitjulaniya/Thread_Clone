@@ -12,15 +12,18 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
     
-  const handleSignUpClick = async () => {
+  const handleSignUpClick = async (e) => {
+    e.preventDefault()
     try {
       const response = await fetch("http://localhost:1000/api/users/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+        
         body: JSON.stringify({
-          userName,
+          username : userName,
           mobile,
           email,
           password,
@@ -39,6 +42,13 @@ const Signup = () => {
       // if (data.success) {
       //   navigate("/signin");
       // }
+      
+      navigate("/signin")
+      setEmail("")
+      setPassword("")
+      setUserName("")
+      setMobile("")
+
     } catch (error) {
       console.log("Error:", error);
     }
@@ -99,7 +109,7 @@ const Signup = () => {
             </p>
             <button
               className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold py-2 px-4 rounded-md mt-4 hover:bg-indigo-600 hover:to-blue-600 transition ease-in-out duration-150"
-              onClick={()=>{handleSignUpClick()}}
+              onClick={(e)=>{handleSignUpClick(e)}}
             >
               Sign Up
             </button>

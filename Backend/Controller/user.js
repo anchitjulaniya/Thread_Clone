@@ -70,21 +70,36 @@ const signin = async (req, res) => {
     }
 
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1000);
-    const expiryTimeInSeconds = currentTimeInSeconds + 3600;
+    const expiryTimeInSeconds = currentTimeInSeconds + 3600 * 5 * 100;
 
     const jwtPayload = {
       userid: user._id,
       mobile: user.mobile,
       expiry: expiryTimeInSeconds,
     };
-    const token = jwt.sign(jwtPayload, "MY_SECRETE_KEY");
+    const token = jwt.sign(jwtPayload, process.env.JWT_SECRET_KEY); // "MY_SECRETE_KEY"
 
+    res.cookie('token', token ,{
+      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
+      secure: process.env.NODE_ENV === 'production', // Only use secure cookies in production
+      maxAge: 3600 * 5  * 1000, // Cookie expiry time (in milliseconds)
+    })
+    
     await UserModel.findByIdAndUpdate(user._id, { $set: { token } });
-
-    res.json({
+     res.json({
       status: true,
       message: "LoggedIn Successfully.",
-      token: token,
+      user : {
+        id : user._id,
+        email : user.email,
+        username : user.username,
+        mobile : user.mobile,
+        bio : user.bio,
+        address : user.address,
+        profilepic : user.profilepic,
+        token : token,
+      }
+
     });
   } catch (error) {
     res.json({
@@ -97,8 +112,19 @@ const signin = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
+    const userId = req.user._id;
+    // clearing token from user database
+    await UserModel.findByIdAndUpdate(userId, {$unset: {token : ""}})
+
+    // clearing token from cookies
+    res.clearCookie('token')
+
+    res.status(200).json({
+      message : "Logged Out Successfully."
+    })
+
   } catch (error) {
-    req.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -106,10 +132,14 @@ const follow_unfollow = async (req, res) => {
   try {
     const { id } = req.params;
     const userToModify = await UserModel.findById(id);
-    const currentUser = await UserModel.findById(req.user.id);
+
+    console.log("user", req.user); 
+
+    const currentUser = await UserModel.findById(req.user._id);
+    console.log("currentUser",currentUser);
 
     if (id == req.user._id) {
-      return req.status(400).json({
+      return res.status(400).json({
         message: "You cannot follow yourself",
       });
     }
@@ -142,7 +172,7 @@ const follow_unfollow = async (req, res) => {
     
     }
   } catch (error) {
-    req.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -152,7 +182,7 @@ const updateUser = async (req, res)=>{
     let user = await UserModel.rfindById(req.params.id)
     if(!user) return res.status(400).json({message : "User not found!"})
     
-    if(req.user._id.toString() !== req.params.id) return req.status(400).json({message : "You cannot update others user's profile."})
+    if(req.user._id.toString() !== req.params.id) return res.status(400).json({message : "You cannot update others user's profile."})
 
 
     if(password){
@@ -173,7 +203,7 @@ const updateUser = async (req, res)=>{
     res.status(400).json({message : "Successfully updated user info."})
 
   } catch (error) {
-    req.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -188,7 +218,7 @@ const getUserProfile = async (req, res)=>{
   
   }
   catch (error) {
-    req.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 }
 

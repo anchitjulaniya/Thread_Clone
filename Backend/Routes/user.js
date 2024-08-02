@@ -7,7 +7,7 @@ routes.post('/signup', userController.signup)
 
 routes.post('/signin', userController.signin)
 
-routes.post('/logout', userController.logout)
+routes.post('/logout', authMiddleware,  userController.logout)
 
 routes.post('/follow/:id', authMiddleware,  userController.follow_unfollow)
 
