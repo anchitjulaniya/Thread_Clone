@@ -5,6 +5,7 @@ import post1 from "../assets/post1.png";
 import Createpost from "./Createpost";
 import Blank_Profile_Photo from "../assets/Blank_Profile_Photo.png";
 import {url} from "../utils/link";
+import {  toast } from 'react-toastify'
 
 function Home() {
   const [isDarkMode, setDarkMode, currentUser, setCurrentUser] =
@@ -83,11 +84,21 @@ function Home() {
       } else {
         console.log("No posts found");
         setData(posts)
+        toast("No Post Found!",{
+          position: "bottom-right",
+          theme: "colored",
+        })
+        toast("Please Follow Someone to see posts!",{
+          position: "bottom-right",
+          theme: "colored",
+        })
+        
       }
     } catch (error) {
       console.error("Failed to fetch feed:", error.message);
     }
   };
+
   const getCurrentUserFromLocalStorage = ()=>{
     const user = JSON.parse(localStorage.getItem('user'))
     if(user){

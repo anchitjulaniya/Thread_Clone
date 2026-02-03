@@ -9,6 +9,7 @@ import {
 import SignIn from "./Components/Signin.jsx";
 import SignUp from "./Components/Signup.jsx";
 import Home from "./Components/Home.jsx";
+import UserPage from "./Components/UserPage.jsx";
 
 
 const renderfunction = createBrowserRouter([
@@ -31,6 +32,10 @@ const renderfunction = createBrowserRouter([
       {
         path: "/home",
         element: <Home />,
+      },
+      {
+        path: "/profile",
+        element: <UserPage />,
       },
     ],
   },

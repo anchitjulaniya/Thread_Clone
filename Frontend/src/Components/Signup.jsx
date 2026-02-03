@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { myContext } from "./Context";
 import { useNavigate } from "react-router";
 import { Link } from 'react-router-dom'
+import {  toast } from 'react-toastify'
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -42,12 +43,17 @@ const Signup = () => {
       // if (data.success) {
       //   navigate("/signin");
       // }
+      toast.success("Account Created Successfully🚀",{
+        position: "bottom-right",
+        theme: "colored",
+      })
       
       navigate("/signin")
       setEmail("")
       setPassword("")
       setUserName("")
       setMobile("")
+
 
     } catch (error) {
       console.log("Error:", error);

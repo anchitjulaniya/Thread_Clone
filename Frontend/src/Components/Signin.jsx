@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { myContext } from "./Context";
 import { useNavigate } from "react-router";
 import { Link } from 'react-router-dom'
+import {  toast } from 'react-toastify'
 
 function Signin() {
 
@@ -45,6 +46,11 @@ function Signin() {
 
       setEmail("")
       setPassword("")
+
+      toast.success("Successfully loggedIn✈️",{
+        position: "bottom-right",
+        theme: "colored",
+      })
     }
     catch(error){
       console.log(error);
@@ -61,7 +67,7 @@ function Signin() {
         className= {`bg-${isDarkMode ? "black" : "white"} bg-gray-800 rounded-lg overflow-hidden`}
       >
         <div className="p-8">
-          <h2 className={`text-center text-3xl font-extrabold text-white`}>
+          <h2 className={`text-${!isDarkMode ? "black" : "white"} text-center text-3xl font-extrabold `}>
             Welcome Back
           </h2>
           <p className="mt-4 text-center text-gray-400">Sign in to continue</p>
@@ -99,7 +105,7 @@ function Signin() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-4">
+            <div className="hidden items-center justify-between mt-4">
               <div className="flex items-center">
                 <input
                   className="h-4 w-4 text-indigo-500 focus:ring-indigo-400 border-gray-600 rounded"
@@ -117,14 +123,14 @@ function Signin() {
 
               <div className="text-sm">
                 <a
-                  className="font-medium text-indigo-500 hover:text-indigo-400"
+                  className="hidden font-medium text-indigo-500 hover:text-indigo-400"
                   href="#"
                 >
                   Forgot your password?
                 </a>
               </div>
             </div>
-            <p className="text-white mt-4">
+            <p className={`text-${!isDarkMode ? "black" : "white"} mt-4`}>
               Dont&apos;s have an account?
               <Link to='/signup'
                 className="ml-2 text-sm text-blue-500 -200 hover:underline mt-4"
