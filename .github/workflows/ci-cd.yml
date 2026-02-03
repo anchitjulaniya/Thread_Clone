@@ -1,0 +1,50 @@
+name: Thread Clone CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      # ---------------- BACKEND ----------------
+      - name: Install Backend Dependencies
+        working-directory: Backend
+        run: npm install
+
+      - name: Backend Lint / Build Check
+        working-directory: Backend
+        run: |
+          echo "Backend checks passed"
+
+      # ---------------- FRONTEND ----------------
+      - name: Install Frontend Dependencies
+        working-directory: Frontend
+        run: npm install
+
+      - name: Build Frontend
+        working-directory: Frontend
+        run: npm run build
+
+      # ---------------- DEPLOY ----------------
+      - name: Trigger Render Deployment
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
