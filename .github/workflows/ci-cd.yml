@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,24 +17,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Node
-      - name: Setup Node.js
+      # Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
 
-      # ---------------- BACKEND ----------------
+      # ---------------- BACKEND CI ----------------
       - name: Install Backend Dependencies
         working-directory: Backend
         run: npm install
 
-      - name: Backend Lint / Build Check
+      - name: Backend Check
         working-directory: Backend
         run: |
           echo "Backend checks passed"
 
-      # ---------------- FRONTEND ----------------
+      # ---------------- FRONTEND CI ----------------
       - name: Install Frontend Dependencies
         working-directory: Frontend
         run: npm install
@@ -43,8 +43,8 @@ jobs:
         working-directory: Frontend
         run: npm run build
 
-      # ---------------- DEPLOY ----------------
-      - name: Trigger Render Deployment
+      # ---------------- DEPLOY BACKEND ----------------
+      - name: Deploy Backend to Render
         if: github.ref == 'refs/heads/main'
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
