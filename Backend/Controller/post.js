@@ -1,22 +1,37 @@
 const PostModel = require('../Model/post')
 const UserModel = require('../Model/user')
+const cloudinary = require('../config/cloudinary');
 
 const createPost = async (req, res)=> {
-    console.log("____",req.body)
-    const {postedBy, text, img} = req.body
+    const { text} = req.body
+
     try {
-        
-    if(!postedBy || !text) return res.status(400).json({message : "PostedBy and text fields are required"})
+    const userId = req.user._id;
+
+     if (!text)
+      return res.status(400).json({ message: "Text is required" });
+
+    if(text.length > 500) return res.status(400).json({message : "Text must be less than 500 characters"})
     
-    if(text.length > 500) return res.status(400).json({message : "Text mut be less than 500 characters"})
-    const user = await UserModel.findById(postedBy)
+    let imageUrl = "";
+
+    if(!req.file) return res.status(400).json({ message: "Image is required" });
+
+    if(req.file){
+        // console.log("line 23")
+        const uploadedImage = await cloudinary.uploader.upload(req.file.path, {folder: "posts"});
+        console.log("CLOUDINARY RESPONSE:", uploadedImage);
+        imageUrl = uploadedImage.secure_url;
+    }
+
+    const user = await UserModel.findById(userId)
     const newPost = await PostModel.create({
-        postedBy : postedBy,
+        postedBy : userId,
         text : text,
-        image : img,
+        image : imageUrl,
         username : user.username
     })
-    console.log("New Post", newPost)
+    
     res.status(200).json({message : "Post Created Successfully.", result : newPost})
     }
     catch (error) {
@@ -24,10 +39,11 @@ const createPost = async (req, res)=> {
       }
 }
 
+// in future
 const updatePost = async (req, res)=> {
     try {
         // const post = await PostModel.findOne({req.params.postId})
-        console.log("Update Post");
+        // console.log("Update Post");
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -35,9 +51,9 @@ const updatePost = async (req, res)=> {
 }
 
 const getPost = async (req, res)=>{
-const {postId} = res.params
+const {postId} = req.params
 try{
-    const post = await PostModel.findById(postId)
+    const post = await PostModel.findById({_id:postId})
     if(!post) return res.status(400).json({message : "Post not found!"})
     res.status(200).json({message : "Post", result : post})
 }
@@ -47,15 +63,21 @@ catch (error) {
 }
 
 const  deletePost = async (req, res)=>{
-    const {postId} = res.params
+    const {postId} = req.params;
     try{
-        const post = await PostModel.findByIdAndDelete(postId)
-
+        const post = await PostModel.findOne({_id:postId, isDeleted:false});
+        console.log("Post :", post)
         if(!post) return res.status(400).json({message : "Post id is incorrect!"})
         
-        if(postId !== req.user._id) return res.status(400).json({message : "Unauthorised to delete!"})
+        if(post.postedBy.toString() !== req.user._id.toString()) return res.status(403).json({message : "Unauthorised to delete!"})
+        console.log("post.postedBy", post.postedBy.toString());
+        console.log("req.user._id", req.user._id.toString());
+
+        post.isDeleted = true;
         
-        res.status(200).json({message : "Post Successfully Deleted", result : post})
+        await post.save();
+
+        res.status(200).json({message : "Post Successfully Deleted"})
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -63,30 +85,34 @@ const  deletePost = async (req, res)=>{
 }
 
 const likePost = async (req, res)=>{
-    const {postId} = res.params
+    const postId  = req.params.postId
+
     try{
-        const post = await PostModel.findById(postId)
+        const post = await PostModel.findOne({_id:postId})
+
         if(!post) return res.status(400).json({message : "Post not found!"})
         
         const userLikedPost = post.likes.includes(req.user._id)
+        
         if(userLikedPost){
             // unlike
-            await PostModel.findByIdAndUpdate(postId, {$pull : {likes : user.req._id}})
-            res.status(200).json({message : "Post unliked Successfully."})
+            const updatedUser = await PostModel.findByIdAndUpdate(postId, {$pull : {likes : req.user._id}}, {new:true})
+            res.status(200).json({suceess:true, message : "Post unliked Successfully.", user:updatedUser})
         }
         else{
             // like
-            await PostModel.findByIdAndUpdate(postId, {$push : {likes : user.req._id}})
-            res.status(200).json({message : "Post liked Successfully."})
+            const updatedUser = await PostModel.findByIdAndUpdate(postId, {$push : {likes : req.user._id}},{ new: true})
+            res.status(200).json({suceess:true, message : "Post liked Successfully.", user:updatedUser})
         }
         
-        res.status(200).json({message : "Post liked Successfully", result : post})
+        // res.status(200).json({message : "Post liked Successfully", result : post})
     }
     catch (error) {
         res.status(500).json({ message: error.message });
       }
 }
 
+// in future
 const replyToPost = async (req, res)=>{
     const { postId } = req.params
     try{
@@ -116,22 +142,54 @@ const replyToPost = async (req, res)=>{
 const getFeedPosts = async (req, res)=>{
     try{
         const userId = req.user.id
-        console.log("_id",userId);
+        // console.log("_id",userId);
         const user = await UserModel.findById(userId)
-        console.log(user)
+        // console.log(user)
         if(!user) return res.status(404).json({message : "User not found!"})
         
         const following = user.following
 
         const feedPosts = await PostModel.find({postedBy : {$in : following}}).sort({createdBy: -1})
-        console.log("feedPost", feedPosts);
+        // console.log("feedPost", feedPosts);
         res.status(200).json({ message: "feed Get Successfully", result : feedPosts });
     }
     catch(error){
         res.status(500).json({ message: error.message });
     }
 }
+const feedPosts = async(req, res)=>{
+    const search = req.query.search || '';
+    const sort = req.query.sort || 'asc';
+    const limit = req.query.limit || 20;
+    const page = req.query.page || 1;
 
+    try{
+    const [total, posts] = await Promise.all([PostModel.countDocuments({isDeleted: false},{title: { $regex: search, $options: "i" }}) ,
+                    PostModel.find({isDeleted:false, text: {$regex : search, $options: 'i'}})
+                    .sort({createdAt: sort=='desc'?-1:1})
+                    .limit(limit)
+                    .skip((page-1)*limit)])
+                    
+    if(!posts){
+        res.status().json({
+            status: false,
+            message: "Not found"
+        })
+    }
+
+    res.status(200).json({
+        status: true,
+        message: "Latest Posts Successfully fetched",
+        count: posts.length,
+        total,
+        data: posts
+    })
+
+    }catch(error){
+        console.log("error", error);
+        
+    }        
+}
 
 
 const postController = {
@@ -141,7 +199,8 @@ const postController = {
     deletePost,
     likePost,
     replyToPost,
-    getFeedPosts
+    getFeedPosts,
+    feedPosts
 
 }
 

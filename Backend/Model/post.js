@@ -34,7 +34,12 @@ const postschema = new mongoose.Schema({
         username :{ 
             type : String
         }
-    }]
+    }],
+    isDeleted: {
+        type: Boolean,
+        required:true,
+        default:false
+    }
 })
 
 const PostModel = mongoose.model("post", postschema)

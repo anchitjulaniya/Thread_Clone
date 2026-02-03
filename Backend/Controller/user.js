@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const UserModel = require("../Model/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const statusCodes = require('http-status-codes');
 
 const signup = async (req, res) => {
   try {
@@ -18,13 +19,13 @@ const signup = async (req, res) => {
     }
 
     const salt = bcrypt.genSaltSync(10);
-    const pass = bcrypt.hashSync(req.body.password, salt);
+    const hashPassword = bcrypt.hashSync(password, salt);
 
     const user = {
       username: username,
       mobile: mobile,
       email: email,
-      password: pass,
+      password: hashPassword,
     };
 
     // cookie setup is pending
@@ -82,7 +83,7 @@ const signin = async (req, res) => {
     res.cookie('token', token ,{
       httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
       secure: process.env.NODE_ENV === 'production', // Only use secure cookies in production
-      maxAge: 3600 * 5  * 1000, // Cookie expiry time (in milliseconds)
+      maxAge: 36000 * 5  * 1000, // Cookie expiry time (in milliseconds)
     })
     
     await UserModel.findByIdAndUpdate(user._id, { $set: { token } });
@@ -91,12 +92,14 @@ const signin = async (req, res) => {
       message: "LoggedIn Successfully.",
       user : {
         id : user._id,
-        email : user.email,
         username : user.username,
         mobile : user.mobile,
-        bio : user.bio,
-        address : user.address,
+        email : user.email,
         profilepic : user.profilepic,
+        followers : user.followers,
+        following : user.following,
+        address : user.address,
+        bio : user.bio,
         token : token,
       }
 
@@ -133,10 +136,10 @@ const follow_unfollow = async (req, res) => {
     const { id } = req.params;
     const userToModify = await UserModel.findById(id);
 
-    console.log("user", req.user); 
+    // console.log("user", req.user); 
 
     const currentUser = await UserModel.findById(req.user._id);
-    console.log("currentUser",currentUser);
+    // console.log("currentUser",currentUser);
 
     if (id == req.user._id) {
       return res.status(400).json({

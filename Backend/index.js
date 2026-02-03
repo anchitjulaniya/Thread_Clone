@@ -1,16 +1,17 @@
 const express = require('express')
 const mongoose = require('mongoose')
-const app = express()
 const connectDB = require('./Database/connectDB')
 const dotenv = require('dotenv')
 const userRoutes = require('./Routes/user')
 const postRoutes = require('./Routes/post')
+const messageRoutes = require('./Routes/message')
 const cors = require('cors')
-
-
-// const threadRoutes = require('./Routes/thread')
+const http = require('http');
+const { Server } = require('socket.io');
+const {app,io, server} = require('./socket/socket')
 const authMiddleware = require('./Middleware/authMiddleware')
 const cookieParser = require('cookie-parser')
+const migration = require('./migrateUserPost')
 
 const allowedOrigins = [
     'http://localhost:5173', //frontend ka dalna hai
@@ -29,30 +30,25 @@ const corsOptions = {
 credentials: true
 };
 
-app.use(cors(corsOptions))
+app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-
-
 
 dotenv.config();
 
-// Database connection
-// mongoose.connect(process.env.BASE_URL)
-// .then(()=>{console.log("MongoDB Connected Successfully")})
-// .catch((error)=>{console.log("MongoDB Error!",error)})
-// or 
-connectDB()
+connectDB();
 
 // Middleware
-app.use(express.json()) // to parse JSON data in the req.body
-app.use(express.urlencoded({ extended : true}) ) // to parse the form data in the req.body
-app.use(cookieParser())
+app.use(express.json()); // to parse JSON data in the req.body
+app.use(express.urlencoded({ extended : true}) ); // to parse the form data in the req.body
+app.use(cookieParser());
 
 // Routes
 
-app.use('/api/users', userRoutes)
-app.use('/api/posts', authMiddleware, postRoutes)
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/posts', postRoutes);
+app.use('/api/v1/message', messageRoutes)
+app.use('/migrate', migration);
 
-const PORT =  1000
-
-app.listen(PORT, ()=>{console.log(`Server is running on ${PORT} port`)})    
+const PORT =  5000;
+// app.use(express.static('/public'));
+server.listen(PORT, ()=>{console.log(`Server is running on ${PORT} port`)}); 

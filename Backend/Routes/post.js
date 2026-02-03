@@ -1,18 +1,18 @@
-const express = require('express')
-const authMiddleware = require('../Middleware/authMiddleware')
-const postController = require('../Controller/post')
+const express = require('express');
+const authMiddleware = require('../Middleware/authMiddleware');
+const postController = require('../Controller/post');
+const upload = require('../Middleware/upload');
 
-const routes = express.Router()
+const routes = express.Router();
 
-routes.get('/feed',   postController.getFeedPosts)
-routes.post('/create',   postController.createPost ) 
-// routes.post('/create',   (req,res)=>{
-//     return res.json("hi")
-// } ) 
+routes.get('/feed', authMiddleware, postController.getFeedPosts);
+routes.post('/create', authMiddleware, upload.single("image"), postController.createPost); 
+routes.get('/', postController.feedPosts);
 
-routes.get('/:postId',   postController.updatePost) // get single post by id
-routes.delete('/:postId',   postController.deletePost) // delete post
-routes.post('/like/:postId',   postController.likePost) // like post
-routes.post('/reply/:postId',   postController.replyToPost) // reply
+// authMiddleware
+routes.get('/:postId', postController.getPost); // get single post by id
+routes.delete('/:postId', authMiddleware,  postController.deletePost); // delete post
+routes.put('/like/:postId', authMiddleware, postController.likePost); // like post
+// routes.post('/reply/:postId',  postController.replyToPost) // reply
 
-module.exports = routes
+module.exports = routes;

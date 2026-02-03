@@ -3,29 +3,24 @@ const UserSchema = require('../Model/user');
 
 const authMiddleware = async (req, res, next) => {
     try {
-        // const bearertoken = req.headers['authorization'];
-        
-        // if (!bearertoken) {
-        //     return res.status(401).json({
-        //         status: false,
-        //         message: "Token is required"
-        //     });
-        // }
-        
-        if(!req.cookies.token){
-            return res.status(401).json({message : "unauthorised"})
-        }
-        // console.log("token from Cookie after", req.cookies.token)
+        const authHeader = req.headers.authorization;
 
-        const token = req.cookies.token  // || bearertoken.split(" ")[1];
+  
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: false,
+        message: "Authorization token missing or invalid",
+      });
+    }
 
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY); // verify Token
+    const token = authHeader.split(" ")[1];
 
-        console.log("Token Data- authMiddleware", decodedToken);
+
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
         const currentTimeInSeconds = Math.floor(new Date().getTime() / 1000);
 
-        if (currentTimeInSeconds > decodedToken.expiry) {
+        if (currentTimeInSeconds > decodedToken.exp) {
             return res.status(401).json({
                 status: false,
                 message: "Unauthorized! Token expired"
@@ -41,6 +36,7 @@ const authMiddleware = async (req, res, next) => {
         }
 
         req.user = user;
+        // console.log("✅ authMiddleware passed");
         next();
     } catch (error) {
         console.log("Error in authMiddleware:", error);
